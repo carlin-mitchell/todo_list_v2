@@ -14,6 +14,7 @@ app.use(express.static("public"));
 const items = ["Buy Food", "Cook Food", "Eat Food"];
 const workItems = [];
 
+//############################################### '/' ###############################################  
 app.get("/", function(req, res) {
 
 const day = date.getDate();
@@ -35,10 +36,16 @@ app.post("/", function(req, res){
   }
 });
 
+
+
+//############################################# '/work' #############################################  
 app.get("/work", function(req,res){
   res.render("list", {listTitle: "Work List", newListItems: workItems});
 });
 
+
+
+//############################################ '/about' #############################################  
 app.get("/about", function(req, res){
   res.render("about");
 });
