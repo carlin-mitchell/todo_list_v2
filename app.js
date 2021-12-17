@@ -2,7 +2,7 @@
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js");
+const date = require(__dirname + "/local_modules/date.js");
 
 const app = express();
 
