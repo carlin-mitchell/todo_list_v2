@@ -2,7 +2,6 @@
 
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/local_modules/date.js");
 const mongoose = require('mongoose');
 
 const app = express();
@@ -12,18 +11,23 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
+
+//#################################### Mongoose Mongo Connection ####################################  
 const dbName = 'todoListDB';
 mongoose.connect('mongodb://localhost:27017/' + dbName);
 
-const items = ["Buy Food", "Cook Food", "Eat Food"];
-const workItems = [];
+const itemSchema = new mongoose.Schema({
+  name: String,
+});
+
+const Item = mongoose.model('Item', itemSchema);
+
+
 
 //############################################### '/' ###############################################  
 app.get("/", function(req, res) {
 
-const day = date.getDate();
-
-  res.render("list", {listTitle: day, newListItems: items});
+  res.render("list", {listTitle: 'Today', newListItems: items});
 
 });
 
