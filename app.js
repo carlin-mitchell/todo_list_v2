@@ -99,8 +99,17 @@ app.listen(3000, function() {
 
 
 
-//############################################ '/delete' #############################################  
+//############################################ '/deleteItem' #############################################  
 
-app.post('/delete', (req, res) =>{
-  console.log(req.body);
+app.post('/deleteItem', (req, res) =>{
+  let deletedItemID = req.body.checkbox;
+  console.log(deletedItemID);
+  Item.findByIdAndRemove(deletedItemID, (error) =>{
+    if (error){
+      console.log(error);
+    }else {
+      console.log("Successfully deleted the item");
+      res.redirect('/');
+    }
+  });
 });
