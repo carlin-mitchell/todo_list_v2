@@ -22,12 +22,44 @@ const itemSchema = new mongoose.Schema({
 
 const Item = mongoose.model('Item', itemSchema);
 
+const item1 = new Item ({
+  name: "Welcome to your todo-list!",
+});
 
+const item2 = new Item ({
+  name: "Hit the + button to add new items.",
+});
+
+const item3 = new Item ({
+  name: "<-- Hit this to delete an item.",
+});
+
+const defaultItems = [item1, item2, item3];
 
 //############################################### '/' ###############################################  
 app.get("/", function(req, res) {
 
-  res.render("list", {listTitle: 'Today', newListItems: items});
+  Item.find({}, (err, foundItems) => {
+    if (err) {
+      console.log(err);
+      //handle the error 
+    } else {
+      if (foundItems.length === 0){
+        Item.insertMany(defaultItems, (error, docs) => {
+          if (error) {
+            console.log(err);
+          } else {
+            console.log("Successfully saved default items to DB");
+          };
+        });
+        res.redirect('/');
+      }else{
+        res.render("list", {listTitle: 'Today', newListItems: foundItems});
+      }
+    }
+  }); 
+  
+  
 
 });
 
