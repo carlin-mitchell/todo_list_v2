@@ -48,12 +48,12 @@ app.get("/", function(req, res) {
         Item.insertMany(defaultItems, (error, docs) => {
           if (error) {
             console.log(err);
-          } else {
+          }else {
             console.log("Successfully saved default items to DB");
           };
         });
         res.redirect('/');
-      }else{
+      } else{
         res.render("list", {listTitle: 'Today', newListItems: foundItems});
       }
     }
@@ -64,16 +64,19 @@ app.get("/", function(req, res) {
 });
 
 app.post("/", function(req, res){
-
-  const item = req.body.newItem;
-
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    items.push(item);
-    res.redirect("/");
-  }
+  const item = new Item({
+    name: req.body.newItem,
+  });
+  
+  Item.insertMany([item], (error, docs) =>{
+    if (error){
+      //handle the error
+      console.log(error);
+    }else {
+      console.log(`Successfully added "${item.name}" to list.`);
+      res.redirect('/');
+    };
+  });
 });
 
 
@@ -92,4 +95,12 @@ app.get("/about", function(req, res){
 
 app.listen(3000, function() {
   console.log("Server started on port 3000");
+});
+
+
+
+//############################################ '/delete' #############################################  
+
+app.post('/delete', (req, res) =>{
+  console.log(req.body);
 });
