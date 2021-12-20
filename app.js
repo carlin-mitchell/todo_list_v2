@@ -3,12 +3,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
+const { redirect } = require("express/lib/response");
 
 const app = express();
 
 app.set('view engine', 'ejs');
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 
@@ -16,100 +17,149 @@ app.use(express.static("public"));
 const dbName = 'todoListDB';
 mongoose.connect('mongodb://localhost:27017/' + dbName);
 
+
+//##################################### Mongoose List Objects #######################################  
 const itemSchema = new mongoose.Schema({
   name: String,
 });
 
 const Item = mongoose.model('Item', itemSchema);
 
-const item1 = new Item ({
+const item1 = new Item({
   name: "Welcome to your todo-list!",
 });
 
-const item2 = new Item ({
+const item2 = new Item({
   name: "Hit the + button to add new items.",
 });
 
-const item3 = new Item ({
+const item3 = new Item({
   name: "<-- Hit this to delete an item.",
 });
 
 const defaultItems = [item1, item2, item3];
 
+//~~~~~~~~~~~~ Custom List Schema ~~~~~~~~~~~~
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemSchema],
+});
+
+const List = mongoose.model("List", listSchema);
+
 //############################################### '/' ###############################################  
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
 
   Item.find({}, (err, foundItems) => {
     if (err) {
       console.log(err);
       //handle the error 
     } else {
-      if (foundItems.length === 0){
+      if (foundItems.length === 0) {
         Item.insertMany(defaultItems, (error, docs) => {
           if (error) {
             console.log(err);
-          }else {
+          } else {
             console.log("Successfully saved default items to DB");
           };
         });
         res.redirect('/');
-      } else{
-        res.render("list", {listTitle: 'Today', newListItems: foundItems});
+      } else {
+        res.render("list", { listTitle: 'Today', newListItems: foundItems });
       }
     }
-  }); 
-  
-  
+  });
+
+
 
 });
 
-app.post("/", function(req, res){
+app.post("/", function (req, res) {
+  const itemName = req.body.newItem;
+  const listName = req.body.list;
+
   const item = new Item({
-    name: req.body.newItem,
+    name: itemName,
   });
-  
-  Item.insertMany([item], (error, docs) =>{
-    if (error){
-      //handle the error
-      console.log(error);
-    }else {
-      console.log(`Successfully added "${item.name}" to list.`);
-      res.redirect('/');
+
+  if (listName === "Today"){
+    item.save();
+    res.redirect('/');
+  } 
+  else {
+    List.findOne({name: listName}, (err, foundList) => {
+      if (err) {
+        console.log(err);
+      }
+      else {
+        foundList.items.push(item);
+        foundList.save();
+        res.redirect('/' + listName);
+      };
+    });
+  };
+});
+
+
+//####################################### '/work' DEPRECATED ########################################  
+// app.get("/work", function(req,res){
+//   res.render("list", {listTitle: "Work List", newListItems: workItems});
+// });
+
+
+//######################################## '/:customListName' #######################################  
+app.get("/:customListName", (req, res) => {
+  const customListName = req.params.customListName;
+
+  List.findOne({name: customListName}, (err, foundList) => {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      if (!foundList) {
+        //create a new list
+        const list = new List({
+          name: customListName,
+          items: defaultItems,
+        });
+        list.save();
+        res.redirect('/' + customListName);
+      }
+      else {
+        //render existing list
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+      };
     };
   });
 });
 
-
-
-//############################################# '/work' #############################################  
-app.get("/work", function(req,res){
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
-});
-
-
-
 //############################################ '/about' #############################################  
-app.get("/about", function(req, res){
+app.get("/about", function (req, res) {
   res.render("about");
 });
 
-app.listen(3000, function() {
-  console.log("Server started on port 3000");
-});
 
 
+//########################################## '/deleteItem' ###########################################  
 
-//############################################ '/deleteItem' #############################################  
-
-app.post('/deleteItem', (req, res) =>{
+app.post('/deleteItem', (req, res) => {
   let deletedItemID = req.body.checkbox;
   console.log(deletedItemID);
-  Item.findByIdAndRemove(deletedItemID, (error) =>{
-    if (error){
+  Item.findByIdAndRemove(deletedItemID, (error) => {
+    if (error) {
       console.log(error);
-    }else {
+    } else {
       console.log("Successfully deleted the item");
       res.redirect('/');
     }
   });
+});
+
+
+
+
+
+const port = 3000;
+app.listen(port, function () {
+  console.log("Server started on port" + port);
 });
