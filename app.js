@@ -170,7 +170,7 @@ app.post('/deleteItem', (req, res) => {
     });
   }
   else {
-    
+    //do something
   };
 });
 
