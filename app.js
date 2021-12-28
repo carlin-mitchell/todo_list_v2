@@ -131,12 +131,13 @@ app.get("/:customListName", (req, res) => {
         list.save();
         res.redirect('/' + customListName);
       }
-      else if (foundList.items.length === 0) {
-        console.log(defaultItems);
-        foundList.items = foundList.items.concat(defaultItems);
-        foundList.save();
-        res.redirect('/' + customListName);
-      }
+      // if the found list has zero items, populate it with teh default items
+      // else if (foundList.items.length === 0) {
+      //   console.log(defaultItems);
+      //   foundList.items = foundList.items.concat(defaultItems);
+      //   foundList.save();
+      //   res.redirect('/' + customListName);
+      // }
       else {
         //render existing list
         res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
@@ -169,21 +170,7 @@ app.post('/deleteItem', (req, res) => {
     });
   }
   else {
-    List.findOne({name: listName}, (err, foundList) => {
-      if (err) {
-        console.log(err);
-      }
-      else {
-        const foundListItems = foundList.items;
-        foundListItems.forEach((item, index) => {
-          if (item._id.valueOf() === deletedItemID) {
-            foundListItems.splice(index, 1);
-          };
-        });
-        foundList.save();
-        res.redirect('/' + listName);
-      };
-    });
+    
   };
 });
 
