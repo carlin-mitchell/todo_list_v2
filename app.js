@@ -19,12 +19,22 @@ mongoose.connect('mongodb://localhost:27017/' + dbName);
 
 
 //##################################### Mongoose List Objects #######################################  
+//~~~~~~~~~~~~~~~ Item  Schema and model~~~~~~~~~~~~~~~
 const itemSchema = new mongoose.Schema({
   name: String,
 });
 
 const Item = mongoose.model('Item', itemSchema);
 
+//~~~~~~~~~~~~ Custom List Schema and model ~~~~~~~~~~~~
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemSchema],
+});
+
+const List = mongoose.model("List", listSchema);
+
+//~~~~~~~~~~~~~~~~~~~ Default List Items ~~~~~~~~~~~~~~~
 const item1 = new Item({
   name: "Welcome to your todo-list!",
 });
@@ -39,22 +49,14 @@ const item3 = new Item({
 
 const defaultItems = [item1, item2, item3];
 
-//~~~~~~~~~~~~ Custom List Schema ~~~~~~~~~~~~
-const listSchema = new mongoose.Schema({
-  name: String,
-  items: [itemSchema],
-});
-
-const List = mongoose.model("List", listSchema);
-
 //############################################### '/' ###############################################  
 app.get("/", function (req, res) {
-
   Item.find({}, (err, foundItems) => {
     if (err) {
       console.log(err);
       //handle the error 
     } else {
+      // if the default list is empty, add the default items to it
       if (foundItems.length === 0) {
         Item.insertMany(defaultItems, (error, docs) => {
           if (error) {
@@ -64,8 +66,10 @@ app.get("/", function (req, res) {
           };
         });
         res.redirect('/');
-      } else {
-        res.render("list", { listTitle: 'Today', newListItems: foundItems });
+      } 
+      else {
+      // if the default list is not empty, render it 
+      res.render("list", { listTitle: 'Today', newListItems: foundItems });
       }
     }
   });
@@ -82,11 +86,13 @@ app.post("/", function (req, res) {
     name: itemName,
   });
 
+  // if post request came from the default list, save the item to it reload the page
   if (listName === "Today"){
     item.save();
     res.redirect('/');
   } 
   else {
+  // if the post request came from a custom list, save the item to the custom list's item and reload the page
     List.findOne({name: listName}, (err, foundList) => {
       if (err) {
         console.log(err);
@@ -125,6 +131,12 @@ app.get("/:customListName", (req, res) => {
         list.save();
         res.redirect('/' + customListName);
       }
+      else if (foundList.items.length === 0) {
+        console.log(defaultItems);
+        foundList.items = foundList.items.concat(defaultItems);
+        foundList.save();
+        res.redirect('/' + customListName);
+      }
       else {
         //render existing list
         res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
@@ -143,16 +155,36 @@ app.get("/about", function (req, res) {
 //########################################## '/deleteItem' ###########################################  
 
 app.post('/deleteItem', (req, res) => {
-  let deletedItemID = req.body.checkbox;
-  console.log(deletedItemID);
-  Item.findByIdAndRemove(deletedItemID, (error) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log("Successfully deleted the item");
-      res.redirect('/');
-    }
-  });
+  const deletedItemID = req.body.checkbox;
+  const listName = req.body.listName;
+  
+  if (listName === "Today") {
+    Item.findByIdAndRemove(deletedItemID, (error) => {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Successfully deleted the item");
+        res.redirect('/');
+      }
+    });
+  }
+  else {
+    List.findOne({name: listName}, (err, foundList) => {
+      if (err) {
+        console.log(err);
+      }
+      else {
+        const foundListItems = foundList.items;
+        foundListItems.forEach((item, index) => {
+          if (item._id.valueOf() === deletedItemID) {
+            foundListItems.splice(index, 1);
+          };
+        });
+        foundList.save();
+        res.redirect('/' + listName);
+      };
+    });
+  };
 });
 
 
