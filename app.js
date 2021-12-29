@@ -4,6 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
 const { redirect } = require("express/lib/response");
+const _ = require('lodash');
 
 const app = express();
 
@@ -115,7 +116,7 @@ app.post("/", function (req, res) {
 
 //######################################## '/:customListName' #######################################  
 app.get("/:customListName", (req, res) => {
-  const customListName = req.params.customListName;
+  const customListName = _.capitalize(req.params.customListName);
 
   List.findOne({name: customListName}, (err, foundList) => {
     if (err) {
@@ -132,12 +133,12 @@ app.get("/:customListName", (req, res) => {
         res.redirect('/' + customListName);
       }
       // if the found list has zero items, populate it with teh default items
-      // else if (foundList.items.length === 0) {
-      //   console.log(defaultItems);
-      //   foundList.items = foundList.items.concat(defaultItems);
-      //   foundList.save();
-      //   res.redirect('/' + customListName);
-      // }
+      else if (foundList.items.length === 0) {
+        console.log(defaultItems);
+        foundList.items = foundList.items.concat(defaultItems);
+        foundList.save();
+        res.redirect('/' + customListName);
+      }
       else {
         //render existing list
         res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
@@ -170,8 +171,20 @@ app.post('/deleteItem', (req, res) => {
     });
   }
   else {
-    //do something
-  };
+    List.updateOne(
+      {name: listName},
+      {$pull: {items: {_id: deletedItemID}}},
+      (err, result) => {
+        if (err) {
+          console.log('There was an error');
+        }
+        else {
+          console.log('List updated');
+          res.redirect('/' + listName);
+        }      
+      }
+    )
+  }
 });
 
 
