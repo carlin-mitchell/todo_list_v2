@@ -5,8 +5,8 @@ const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
 const { redirect } = require("express/lib/response");
 const _ = require('lodash');
-
 const app = express();
+const {config} = require('./local_modules/config.js');
 
 app.set('view engine', 'ejs');
 
@@ -15,8 +15,18 @@ app.use(express.static("public"));
 
 
 //#################################### Mongoose Mongo Connection ####################################  
+const localOrAtlas = 'atlas' //choose between 'local' or 'atlas' to connect to the appropriate service
+
 const dbName = 'todoListDB';
-mongoose.connect('mongodb://localhost:27017/' + dbName);
+if (localOrAtlas.toLocaleLowerCase() === 'local'){
+  mongoose.connect('mongodb://localhost:27017/' + dbName);
+}
+else if (localOrAtlas.toLocaleLowerCase() === 'atlas'){
+  const password = config.ATLAS_PASSWORD;
+  mongoose.connect('mongodb+srv://admin-carlin:' + password + '@cluster0.w7dep.mongodb.net/' + dbName);
+}
+else {console.log("CHOOSE AN APPROPRIATE CONNECTION...")};
+
 
 
 //##################################### Mongoose List Objects #######################################  
